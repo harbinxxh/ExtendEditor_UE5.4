@@ -22,7 +22,8 @@ void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 	{
 		for (int32 i = 0; i < NumOfDuplicates; i++)
 		{
-			const FString SourceAssetPath = SelectedAssetData.ObjectPath.ToString();
+			//const FString SourceAssetPath = SelectedAssetData.ObjectPath.ToString();
+			const FString SourceAssetPath = SelectedAssetData.GetSoftObjectPath().ToString();
 			const FString NewDuplicatedAssetName = SelectedAssetData.AssetName.ToString() + TEXT("_") + FString::FromInt(i + 1);
 			const FString NewPathName = FPaths::Combine(SelectedAssetData.PackagePath.ToString(), NewDuplicatedAssetName);
 
@@ -64,6 +65,12 @@ void UQuickAssetAction::AddPrefixes()
 		{
 			Print(TEXT("Already has prefix added "), FColor::Red);
 			continue;
+		}
+
+		if (SelectedObject->IsA<UMaterialInstanceConstant>())
+		{
+			OldName.RemoveFromStart(TEXT("M_"));
+			OldName.RemoveFromEnd(TEXT("_Inst"));
 		}
 
 		const FString NewNameWithPrefix = *PrefixFound + OldName;
