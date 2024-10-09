@@ -10,37 +10,42 @@
 	但不用担心，我们遇到它时在处理。
 */
 
-void Print(const FString& Message, const FColor& Color)
+namespace DebugHeader
 {
-	if (GEngine)
+
+	void static Print(const FString& Message, const FColor& Color)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 8.f, Color, Message);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 8.f, Color, Message);
+		}
 	}
-}
 
-void PrintLog(const FString& Message)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
-}
-
-EAppReturnType::Type ShowMsgDialog(EAppMsgType::Type MsgType, const FString& Message, bool bShowMsgWarning = true)
-{
-	if (bShowMsgWarning)
+	void static PrintLog(const FString& Message)
 	{
-		FText MsgTitle = FText::FromString(TEXT("Warning"));
-		return FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
 	}
-	else
+
+	EAppReturnType::Type static ShowMsgDialog(EAppMsgType::Type MsgType, const FString& Message, bool bShowMsgWarning = true)
 	{
-		return FMessageDialog::Open(MsgType, FText::FromString(Message));
+		if (bShowMsgWarning)
+		{
+			FText MsgTitle = FText::FromString(TEXT("Warning"));
+			return FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
+		}
+		else
+		{
+			return FMessageDialog::Open(MsgType, FText::FromString(Message));
+		}
 	}
-}
 
-void ShowNotifyInfo(const FString& Message)
-{
-	FNotificationInfo NotifyInfo(FText::FromString(Message));
-	NotifyInfo.bUseLargeFont = true;
-	NotifyInfo.FadeOutDuration = 7.f;
+	void static ShowNotifyInfo(const FString& Message)
+	{
+		FNotificationInfo NotifyInfo(FText::FromString(Message));
+		NotifyInfo.bUseLargeFont = true;
+		NotifyInfo.FadeOutDuration = 7.f;
 
-	FSlateNotificationManager::Get().AddNotification(NotifyInfo);
+		FSlateNotificationManager::Get().AddNotification(NotifyInfo);
+	}
+
 }

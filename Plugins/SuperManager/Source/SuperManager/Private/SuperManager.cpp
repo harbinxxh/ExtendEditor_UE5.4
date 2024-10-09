@@ -2,6 +2,9 @@
 
 #include "SuperManager.h"
 #include "ContentBrowserModule.h"
+#include "DebugHeader.h"
+#include "ObjectTools.h"
+#include "EditorAssetLibrary.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -47,18 +50,17 @@ TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtender(const TArray<FSt
 {
 	TSharedRef<FExtender> MenuExtender(new FExtender());
 
-	//第一个参数：ExtensionHook，这就是我们想要插入菜单项的位置，但我们如何知道是哪一个位置呢？我们需要回到编辑器中。
-
 	if (SelectedPaths.Num() > 0)
 	{
 		MenuExtender->AddMenuExtension(
-			FName("Delete"),
+			FName("Delete"), //第一个参数：ExtensionHook，这就是我们想要插入菜单项的位置。
 			EExtensionHook::After,
 			TSharedPtr<FUICommandList>(),
 			FMenuExtensionDelegate::CreateRaw(this, &FSuperManagerModule::AddCBMenuEntry)
 			);
 	}
 
+	FolderPathsSelected = SelectedPaths;
 
 	return MenuExtender;
 }
@@ -78,6 +80,62 @@ void FSuperManagerModule::AddCBMenuEntry(class FMenuBuilder& MenuBuilder)
 //菜单项需要执行的函数-删除未使用的资产
 void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 {
+	if (FolderPathsSelected.Num() > 1)
+	{
+		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("You can only do this to one folder!"));
+		return;
+	}
+
+	// 获取当前选择文件夹中的资产路径列表
+	TArray<FString> AssetsPathNames = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0]);
+
+	if (AssetsPathNames.Num() == 0)
+	{
+		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("No asset found under selected folder!"));
+		return;
+	}
+
+	//如果找到资产数据，要再次显示消息对话框
+	EAppReturnType::Type ConfirmResult =
+	DebugHeader::ShowMsgDialog(EAppMsgType::YesNo, TEXT("A total of ") + FString::FromInt(AssetsPathNames.Num()) + TEXT(" found.\n Woudle you like to processed?"));
+
+	if (ConfirmResult == EAppReturnType::No) return;
+
+	TArray<FAssetData> UnusedAssetsDataArray;
+
+	for (const FString& AssetPathName:AssetsPathNames)
+	{
+		if (AssetPathName.Contains("Developers") || AssetPathName.Contains("Collections"))
+		{
+			continue;
+		}
+
+		// 检测目录是否存在
+		if (!UEditorAssetLibrary::DoesAssetExist(AssetPathName)) continue;
+
+		// 查找资产的引用
+		TArray<FString> AssetReferences = UEditorAssetLibrary::FindPackageReferencersForAsset(AssetPathName);
+
+		// 等于 0，表示此资产未被引用可以删除
+		if (AssetReferences.Num() == 0)
+		{
+			const FAssetData UnusedAssetData = UEditorAssetLibrary::FindAssetData(AssetPathName);
+			UnusedAssetsDataArray.Add(UnusedAssetData);
+		}
+	}
+
+	if (UnusedAssetsDataArray.Num() > 0)
+	{
+		ObjectTools::DeleteAssets(UnusedAssetsDataArray);
+	}
+	else
+	{
+		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("No unused asset found under  selected folder"));
+	}
+
+
+
+
 
 }
 

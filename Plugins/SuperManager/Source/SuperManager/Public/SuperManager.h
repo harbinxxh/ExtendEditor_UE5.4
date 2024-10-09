@@ -20,6 +20,9 @@ private:
 	//初始化自定义菜单
 	void InitCBMenuExtention();
 
+	// 保存用户当前选择的文件夹
+	TArray<FString> FolderPathsSelected;
+
 	//此函数的作用是定义要插入菜单项的位置
 	TSharedRef<FExtender> CustomCBMenuExtender(const TArray<FString>& SelectedPaths);
 
