@@ -32,6 +32,9 @@ private:
 	//菜单项需要执行的函数-删除未使用的资产
 	void OnDeleteUnusedAssetButtonClicked();
 
+	// 修复资产引用重定向
+	void FixUpRedirectors();
+
 #pragma endregion
 
 };

@@ -5,6 +5,9 @@
 #include "DebugHeader.h"
 #include "ObjectTools.h"
 #include "EditorAssetLibrary.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "AssetToolsModule.h"
+
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -137,6 +140,38 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 
 
 
+}
+
+void FSuperManagerModule::FixUpRedirectors()
+{
+	//创建重定向对象数组
+	TArray<UObjectRedirector*> RedirectorsToFixArray;
+
+	//需要使用模块管理器中 FModuleManager::LoadModuleChecked<>() 函数，动态加载 AssetRegistry 模块
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::Get().LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+	//设置过滤器
+	FARFilter Filter;
+	Filter.bRecursiveClasses = true; //将递归路径设置为 true，这将允许进入所有子文件夹。
+	Filter.PackagePaths.Emplace("/Game");//过滤器过滤的文件夹路径
+	Filter.ClassPaths.Emplace("ObjectRedirector");//需要指定要过滤的类的名称
+
+	//将包含通过过滤器所筛选出来的资产数据(FAssetData)
+	TArray<FAssetData> OutRedirectors;
+	AssetRegistryModule.Get().GetAssets(Filter, OutRedirectors);
+
+	for (const FAssetData& RedirectorData : OutRedirectors)
+	{
+		//需要将 FAssetData 数据格式，转换成 UObjectRedirector 数据格式
+		if (UObjectRedirector* RedirectorToFix = Cast<UObjectRedirector>(RedirectorData.GetAsset()))
+		{
+			RedirectorsToFixArray.Add(RedirectorToFix);
+		}
+	}
+
+	//需要调用【AssetToolsModule】模块中的【FixUpRefrencers()】函数，这是用来修复重定向器
+	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	AssetToolsModule.Get().FixupReferencers(RedirectorsToFixArray);
 }
 
 #pragma endregion
