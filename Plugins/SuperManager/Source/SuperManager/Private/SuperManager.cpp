@@ -78,6 +78,14 @@ void FSuperManagerModule::AddCBMenuEntry(class FMenuBuilder& MenuBuilder)
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetButtonClicked)
 	);
+
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Delete Empty Folders")),
+		FText::FromString(TEXT("Safely delete  all empty folder")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked)
+	);
 }
 
 //菜单项需要执行的函数-删除未使用的资产
@@ -135,11 +143,74 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 	{
 		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("No unused asset found under  selected folder"));
 	}
+}
 
+// 删除空文件夹
+void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
+{
+	// 修复资产引用重定向
+	FixUpRedirectors();
 
+	// 获取资产列表
+	TArray<FString> FolderPathsArray = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0], true, true);
+	uint32 Counter = 0;
 
+	FString EmptyFolderPathsNames;
+	TArray<FString> EmptyFoldersPathsArray;
 
+	// 通过循环找出空的目录
+	for (const FString& FolderPath : FolderPathsArray)
+	{
+		if (FolderPath.Contains(TEXT("Developers")) ||
+			FolderPath.Contains(TEXT("Collections")) ||
+			FolderPath.Contains(TEXT("__ExternalActors__")) ||
+			FolderPath.Contains(TEXT("__ExternalObjects__")))
+		{
+			continue;
+		}
 
+		// 查询此目录是否存在
+		if (!UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) continue;
+
+		// 查询目录是否存在资产
+		if (!UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath))
+		{
+			EmptyFolderPathsNames.Append(FolderPath);
+			EmptyFolderPathsNames.Append(TEXT("\n"));
+
+			EmptyFoldersPathsArray.Add(FolderPath);
+		}
+	}
+
+	if (EmptyFoldersPathsArray.Num() == 0)
+	{
+		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("No empty folder found under selected folder"), false);
+		return;
+	}
+
+	// 弹出对话框确认是否要删除空文件夹
+	EAppReturnType::Type ConfirmResult = DebugHeader::ShowMsgDialog(EAppMsgType::OkCancel,
+		TEXT("Empty folder found in:\n") + EmptyFolderPathsNames + TEXT("\nWould you like to delete all?"), false);
+
+	if (ConfirmResult == EAppReturnType::Cancel) return;
+
+	// 执行删除空的文件夹
+	for (const FString& EmptyFoldersPath : EmptyFoldersPathsArray)
+	{
+		if (UEditorAssetLibrary::DeleteDirectory(EmptyFoldersPath))
+		{
+			++Counter;
+		}
+		else
+		{
+			DebugHeader::Print(TEXT("Failed to delete " + EmptyFoldersPath), FColor::Red);
+		}
+	}
+
+	if (Counter > 0)
+	{
+		DebugHeader::ShowNotifyInfo(TEXT("Successfully deleted ") + FString::FromInt(Counter) + TEXT(" folder"));
+	}
 }
 
 void FSuperManagerModule::FixUpRedirectors()
