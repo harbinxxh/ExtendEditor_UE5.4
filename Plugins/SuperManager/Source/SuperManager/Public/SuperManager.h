@@ -35,8 +35,21 @@ private:
 	// 删除空文件夹
 	void OnDeleteEmptyFoldersButtonClicked();
 
+	// 增强删除功能
+	void OnAdvanceDeletionButtonClicked();
+
 	// 修复资产引用重定向
 	void FixUpRedirectors();
+
+#pragma endregion
+
+#pragma region CustomEditorTab
+
+	// 注册自定义 Tab 选项卡
+	void RegisterAdvanceDeletionTab();
+
+	// 代理回调函数生成选项卡
+	TSharedRef<SDockTab> OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& SpawnTabArgs);
 
 #pragma endregion
 

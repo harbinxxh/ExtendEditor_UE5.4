@@ -15,6 +15,7 @@ void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	InitCBMenuExtention();
+	RegisterAdvanceDeletionTab();
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -85,6 +86,14 @@ void FSuperManagerModule::AddCBMenuEntry(class FMenuBuilder& MenuBuilder)
 		FText::FromString(TEXT("Safely delete  all empty folder")),
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked)
+	);
+
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Advance Deletion")),
+		FText::FromString(TEXT("List assets by specific condition in a tab for deleting")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnAdvanceDeletionButtonClicked)
 	);
 }
 
@@ -213,6 +222,13 @@ void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
 	}
 }
 
+// 增强删除功能
+void FSuperManagerModule::OnAdvanceDeletionButtonClicked()
+{
+	// 从菜单项中调用选项卡
+	FGlobalTabmanager::Get()->TryInvokeTab(FName("AdvanceDeletion"));
+}
+
 void FSuperManagerModule::FixUpRedirectors()
 {
 	//创建重定向对象数组
@@ -243,6 +259,31 @@ void FSuperManagerModule::FixUpRedirectors()
 	//需要调用【AssetToolsModule】模块中的【FixUpRefrencers()】函数，这是用来修复重定向器
 	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
 	AssetToolsModule.Get().FixupReferencers(RedirectorsToFixArray);
+}
+
+#pragma endregion
+
+#pragma region CustomEditorTab
+
+// 注册自定义 Tab 选项卡
+void FSuperManagerModule::RegisterAdvanceDeletionTab()
+{
+	/*
+	* 1、TabId 选项卡ID ：当调用选项卡时需要此ID
+	* 2、FOnSpawnTab 代理，用于生成选项卡的回调函数
+	* 3、为选项卡设置显示名称
+	* 4、代理回调函数 OnSpawnAdvanceDeletionTab() 生成选项卡
+	*/
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(FName("AdvanceDeletion"), FOnSpawnTab::CreateRaw(this, &FSuperManagerModule::OnSpawnAdvanceDeletionTab))
+		.SetDisplayName(FText::FromString(TEXT("Advance Deletion")));
+}
+
+// 代理回调函数生成选项卡
+// 注册时不会立即执行此方法，当需要显示DockTab的时候才会被调用
+TSharedRef<SDockTab> FSuperManagerModule::OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
+{
+	return
+	SNew(SDockTab).TabRole(ETabRole::NomadTab);
 }
 
 #pragma endregion
