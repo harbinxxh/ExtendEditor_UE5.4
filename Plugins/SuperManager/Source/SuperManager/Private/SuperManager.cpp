@@ -283,15 +283,43 @@ void FSuperManagerModule::RegisterAdvanceDeletionTab()
 // 注册时不会立即执行此方法，当需要显示DockTab的时候才会被调用
 TSharedRef<SDockTab> FSuperManagerModule::OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
 {
-	//return
-	//SNew(SDockTab).TabRole(ETabRole::NomadTab);
-
 	return
 		SNew(SDockTab).TabRole(ETabRole::NomadTab)
 		[
 			SNew(SAdvanceDeletionTab)
-				.TestString(TEXT("I am passing data"))
+				.AssetsDataToStore(GetAllAssetDataUnderSelectedFolder())
 		];
+}
+
+//获取选择目录下的所有资产函数
+TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetDataUnderSelectedFolder()
+{
+	TArray<TSharedPtr<FAssetData>> AvaiableAssetData;
+
+	//ListAssets() 列出所选择的路径下的所有资产列表
+	//FolderPathSelected[0] 是鼠标右键选择的文件夹
+	TArray<FString> AssetsPathNames = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0]);
+
+	for (const FString& AssetsPathName : AssetsPathNames)
+	{
+		if (AssetsPathName.Contains(TEXT("Developers")) ||
+			AssetsPathName.Contains(TEXT("Collections")) ||
+			AssetsPathName.Contains(TEXT("__ExternalActors__")) ||
+			AssetsPathName.Contains(TEXT("__ExternalObjects__")))
+		{
+			continue;
+		}
+
+		//检查资产是否存在资产
+		if (!UEditorAssetLibrary::DoesAssetExist(AssetsPathName)) continue;
+
+		//查找到的资产数据
+		const FAssetData Data = UEditorAssetLibrary::FindAssetData(AssetsPathName);
+
+		AvaiableAssetData.Add(MakeShared<FAssetData>(Data));
+	}
+
+	return AvaiableAssetData;
 }
 
 #pragma endregion

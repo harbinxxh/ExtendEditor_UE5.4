@@ -51,6 +51,9 @@ private:
 	// 代理回调函数生成选项卡
 	TSharedRef<SDockTab> OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& SpawnTabArgs);
 
+	//获取选择目录下的所有资产函数
+	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderSelectedFolder();
+
 #pragma endregion
 
 };
