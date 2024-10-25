@@ -67,7 +67,14 @@ TSharedRef<ITableRow> SAdvanceDeletionTab::OnGenerateRowForList(TSharedPtr<FAsse
 	//检查数据资产是否有效，如何无效返回默认值
 	if (!AssetDataToDisplay.IsValid()) return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable);
 
+	const FString DisplayAssetClassName = AssetDataToDisplay->GetClass()->GetName();
 	const FString DisplayAssetName = AssetDataToDisplay->AssetName.ToString();
+
+	FSlateFontInfo AssetClassNameFont = GetEmbossedTextFont();
+	AssetClassNameFont.Size = 10.f;
+
+	FSlateFontInfo AssetNameFont = GetEmbossedTextFont();
+	AssetNameFont.Size = 15.f;
 
 	TSharedRef< STableRow< TSharedPtr<FAssetData> >> ListViewRowWidget =
 		SNew(STableRow< TSharedPtr<FAssetData> >, OwnerTable).Padding(FMargin(5.f)) //行之间的间隔
@@ -83,14 +90,19 @@ TSharedRef<ITableRow> SAdvanceDeletionTab::OnGenerateRowForList(TSharedPtr<FAsse
 				ConstructCheckBox(AssetDataToDisplay)
 			]
 
-
 			// Second slot for displaying asset class name
+			+ SHorizontalBox::Slot()
+				.HAlign(HAlign_Center)
+				.VAlign(VAlign_Fill)//填充整个高度
+				.FillWidth(.2f)
+				[
+					ConstructTextForRowWidget(DisplayAssetClassName, AssetClassNameFont)
+				]
 
 			// Third slot for displaying asset name
 			+SHorizontalBox::Slot()
 			[
-				SNew(STextBlock)
-					.Text(FText::FromString(DisplayAssetName))
+				ConstructTextForRowWidget(DisplayAssetName, AssetNameFont)
 			]
 
 			// Fourth slot for a button
@@ -128,4 +140,15 @@ void SAdvanceDeletionTab::OnCheckBoxStateChanged(ECheckBoxState NewState, TShare
 	default:
 		break;
 	}
+}
+
+//构建文本块函数
+TSharedRef<STextBlock> SAdvanceDeletionTab::ConstructTextForRowWidget(const FString& TextContent, const FSlateFontInfo& FontToUse)
+{
+	TSharedRef<STextBlock> ConstructedTextBlock = SNew(STextBlock)
+		.Text(FText::FromString(TextContent))
+		.Font(FontToUse)
+		.ColorAndOpacity(FColor::White);
+
+	return ConstructedTextBlock;
 }
